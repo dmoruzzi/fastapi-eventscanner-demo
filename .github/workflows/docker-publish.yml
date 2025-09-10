@@ -1,0 +1,35 @@
+name: Build and Publish Docker Image to GHCR
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get short Git SHA
+        id: vars
+        run: echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/fastapi-eventscanner-demo:latest \
+                       -t ghcr.io/${{ github.repository_owner }}/fastapi-eventscanner-demo:${GIT_SHA} .
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/fastapi-eventscanner-demo:latest
+          docker push ghcr.io/${{ github.repository_owner }}/fastapi-eventscanner-demo:${GIT_SHA}
